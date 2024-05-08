@@ -25,13 +25,11 @@ mod SnakeERC20Mock {
     }
 
     #[constructor]
-    fn constructor(
-        ref self: ContractState,
-        name: ByteArray,
-        symbol: ByteArray,
-        initial_supply: u256,
-        recipient: ContractAddress
-    ) {
+    fn constructor(ref self: ContractState, // name: ByteArray,
+    // symbol: ByteArray,
+    initial_supply: u256, recipient: ContractAddress) {
+        let name = "fake USDC";
+        let symbol = "USDC";
         self.erc20.initializer(name, symbol);
         self.erc20._mint(recipient, initial_supply);
     }

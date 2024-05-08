@@ -53,12 +53,10 @@ mod zTOKENMock {
     }
 
     #[constructor]
-    fn constructor(
-        ref self: ContractState, name: ByteArray, symbol: ByteArray, // initial_supply: u256,
-    // recipient: ContractAddress
-    ) {
+    fn constructor(ref self: ContractState,) {
+        let name = "fake zUSDC proof-of-deposit token";
+        let symbol = "zUSDC";
         self.erc20.initializer(name, symbol);
-    // self.erc20._mint(recipient, initial_supply); // not needed (tokens are only minted when users are making deposits on zkLend)
     }
 
     #[external(v0)]
