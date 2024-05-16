@@ -74,3 +74,24 @@ TESTS =>
 `starkli invoke 0x06cac83d50e115f7b8ccf3f4fa9dc3e0602b2ac0ce3098a0e8464745972751fa burn 1 0 0x067de9301b1a536800e50AF781Ea93b3918D6b431b781246864f24CAB5e4c34E --watch`
 => Tx Hash = 0x0251e34aadbd936f0e0d54bf618e2092e6751fc4b2fe630fd6763b566fc51039
 
+
+================================================================================
+
+
+TESTS ON MAINNET (Tickets handler v0.4)
+
+declared class_hash = 0x052699acd9aa5d1a0c27ef484dff79c4d93c7e7c0b27d5f148139c248a6a8192
+
+PARAMETERS USED TO DEPLOY CONTRACT ON MAINNET USING ARGENTX BROWSER EXTENSION =>
+
+	owner = 0x07D0E1fb52fD643e2C9B121dAB2FEDAc4Ca2Cd49DF929e9Fa38B679Dee95d048
+	erc20 = 0x049D36570D4e46f48e99674bd3fcc84644DdD6b96F7C741B1562B82f9e004dC7
+	ticket price = 10,0
+	zklend market = 0x04c0a5193d58f74fbace4b74dcf65481e734ed1714121bdc571da345540efa05
+
+Address of the deployed contract = 0x07f242ec7cd63a3dd931533b1159ae6e7a86e17414fc2ca29b84ee984969c248
+	
+Successful mint transaction = https://voyager.online/tx/0x53e67aab4ad551d473039d62c70c7d368d9acedaf85c27efbd4667558cfbc46
+
+Successful burn transaction = 0x0533c3d156d6b20e28705ea511646b41938cef433958f7b8d799741fa5fd7d68
+
