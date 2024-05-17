@@ -1,8 +1,8 @@
-mod tickets_handler;
+mod components;
+mod contracts;
 
 #[cfg(test)]
 mod testing_utils;
 
 
-// only needed for end-to-end tests on Sepolia
-mod end_to_end_tests_mocks;
+

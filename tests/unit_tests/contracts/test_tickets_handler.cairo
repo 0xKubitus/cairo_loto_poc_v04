@@ -1,13 +1,13 @@
-use cairo_loto_poc::tickets_handler::tickets_handler::TicketsHandlerContract::PrivateTrait;
-use cairo_loto_poc::tickets_handler::tickets_handler::TicketsHandlerContract;
-use cairo_loto_poc::tickets_handler::tickets_handler::TicketsHandlerContract::{
+use cairo_loto_poc::contracts::tickets_handler::tickets_handler::TicketsHandlerContract::PrivateTrait;
+use cairo_loto_poc::contracts::tickets_handler::tickets_handler::TicketsHandlerContract;
+use cairo_loto_poc::contracts::tickets_handler::tickets_handler::TicketsHandlerContract::{
     PrivateImpl, TicketsHandlerImpl, ITicketsHandlerTrait
 };
-use cairo_loto_poc::tickets_handler::components::cairo_loto_ticket::CairoLotoTicketComponent;
-use cairo_loto_poc::tickets_handler::components::cairo_loto_ticket::CairoLotoTicketComponent::{
+use cairo_loto_poc::components::cairo_loto_ticket::CairoLotoTicketComponent;
+use cairo_loto_poc::components::cairo_loto_ticket::CairoLotoTicketComponent::{
     TicketInternalTrait, CairoLotoTicketImpl
 };
-use cairo_loto_poc::tickets_handler::interface::{
+use cairo_loto_poc::contracts::tickets_handler::interface::{
     TicketsHandlerABI, TicketsHandlerABIDispatcher, TicketsHandlerABIDispatcherTrait,
 };
 use cairo_loto_poc::testing_utils;

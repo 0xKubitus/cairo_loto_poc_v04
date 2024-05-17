@@ -8,8 +8,8 @@ mod upgrades;
 
 ////////////////////////////////
 
-use cairo_loto_poc::tickets_handler::tickets_handler::TicketsHandlerContract;
-use cairo_loto_poc::tickets_handler::interface::{
+use cairo_loto_poc::contracts::tickets_handler::tickets_handler::TicketsHandlerContract;
+use cairo_loto_poc::contracts::tickets_handler::interface::{
     TicketsHandlerABIDispatcher, TicketsHandlerABIDispatcherTrait,
 };
 use cairo_loto_poc::testing_utils::mocks::zklend_market_mock::{
