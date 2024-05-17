@@ -1,0 +1,97 @@
+Command used to declare each contract needed for end-to-end tests of TicketsHandler contract v0.4:
+(compiler version used by default by starkli = 2.6.2)
+
+```
+starkli declare target/dev/cairo_loto_poc_SnakeERC20Mock.contract_class.json &&
+starkli declare target/dev/cairo_loto_poc_zTOKENMock.contract_class.json &&
+starkli declare target/dev/cairo_loto_poc_zkLendMarketMock.contract_class.json &&
+starkli declare target/dev/cairo_loto_poc_TicketsHandlerContract.contract_class.json
+```
+
+Class Hashes declared =>
+SnakeERC20Mock Class Hash = 0x00ae09e6bec09d18f6c6bb7e79b65c25310ba16ea000db7a0f92755bdd71b4d0
+zTOKENMock Class Hash = 0x06536a47e760f731d9af01079b5ea99ffe79063c0cf3e0f72a24a0d6e0edc5eb
+zkLendMarketMock Class Hash = 0x01014fc639a4a8d1775fba21fb2cae05675077478c73c403046815001a266c1b
+TicketsHandlerContract Class Hash = 
+
+
+################################################################################
+
+
+Commands used to deploy each mock contract on Sepolia:
+(compiler version used by default by starkli = 2.6.2)
+
+1) Mock "USDC" ERC20 token:
+`starkli deploy <class_hash> <initial_supply = 10 with 6 decimals> <recipient = my sepolia account>`
+=> `starkli deploy 0x00ae09e6bec09d18f6c6bb7e79b65c25310ba16ea000db7a0f92755bdd71b4d0 u256:10000000 0x067de9301b1a536800e50AF781Ea93b3918D6b431b781246864f24CAB5e4c34E --watch`
+
+Transaction ID: 0x01d1aa79fb95ff35a328f2f08a6ea6a132995ad3fdbb4e5eaa9fc4c30ffc1941
+Contract Address: 0x0078f0120e69e0cd85fa203d28bbea4a9139b4e327f0ecfd1b76207868fa4edb
+
+- - - - - - - - - -
+
+2) Mock "zUSDC" token (zklend proof of deposit ERC20)
+=> `starkli deploy 0x06536a47e760f731d9af01079b5ea99ffe79063c0cf3e0f72a24a0d6e0edc5eb --max-fee-raw 2577431034859207 --watch`
+
+Transaction ID: 0x00cbae28696e2734b7eba9c77b5441495288021119918ac3d0909b52c2d885cb
+Contract Address: 0x062cb164088bf0767e64bd8a85c9c7c9a58649841792e2f712cceb22fdf0aea2
+
+- - - - - - - - - -
+
+3) Mock zklend Market contract
+=> `starkli deploy 0x01014fc639a4a8d1775fba21fb2cae05675077478c73c403046815001a266c1b --max-fee-raw 4214151457425134 --watch`
+
+Transaction ID: 0x0220bce5c819cac44d646656e670473ae95b4f9733d3234559a7c7e03643193f
+Contract Address: 0x0790c9eab45deb1fde7a78364e43c32083c784ab5d7ffb37f6f14ffb7fdef5e0
+
+=> "zklend_market_dispatcher.set_proof_of_deposit_token(zUSDC_addrs) marche nickel,
+=> "USDC_dispatcher.approve(zklend_market) marche nickel,
+=> "zklend_market_dispatcher.deposit(token, amount) marche nickel,
+=> "zklend_market_dispatcher.withdraw(token, amount) marche nickel aussi.
+
+- - - - - - - - - -
+
+4) TICKETS HANDLER v0.4 contract
+=> `starkli deploy <class_hass> <owner> <underlying_erc20> <ticket_value> <zkLend_market> --watch`
+
+Transaction ID: 0x07ed08eb9b2e3cafd3397154a485e2b7ee9da0793fa822d2c210dcdaeadc7023
+Contract Address: 0x06cac83d50e115f7b8ccf3f4fa9dc3e0602b2ac0ce3098a0e8464745972751fa
+
+= = = = = = = = = = = = = = = = = = =
+
+TESTS =>
+
+(required to test Tickets Handler's mint() function)
+
+`starkli invoke 0x0078f0120e69e0cd85fa203d28bbea4a9139b4e327f0ecfd1b76207868fa4edb approve 0x06cac83d50e115f7b8ccf3f4fa9dc3e0602b2ac0ce3098a0e8464745972751fa u256:10000000 --watch --max-fee-raw 999677412309276`
+=> Tx Hash = 0x070e8b28fd6e1b8c5005bca106d9d744fac92edef4027c64284c80e898a15df2
+
+- - - - - - - - - -
+
+`starkli invoke 0x06cac83d50e115f7b8ccf3f4fa9dc3e0602b2ac0ce3098a0e8464745972751fa mint 0x067de9301b1a536800e50AF781Ea93b3918D6b431b781246864f24CAB5e4c34E --watch --max-fee-raw 9268873080540352`
+=> Tx Hash = 0x04039673afd0e5dbbe481ca22cbb270537231fce2990fdf1891adb242485e53b
+
+`starkli invoke 0x06cac83d50e115f7b8ccf3f4fa9dc3e0602b2ac0ce3098a0e8464745972751fa burn 1 0 0x067de9301b1a536800e50AF781Ea93b3918D6b431b781246864f24CAB5e4c34E --watch`
+=> Tx Hash = 0x0251e34aadbd936f0e0d54bf618e2092e6751fc4b2fe630fd6763b566fc51039
+
+
+================================================================================
+
+
+TESTS ON MAINNET (Tickets handler v0.4)
+
+declared class_hash = 0x052699acd9aa5d1a0c27ef484dff79c4d93c7e7c0b27d5f148139c248a6a8192
+
+PARAMETERS USED TO DEPLOY CONTRACT ON MAINNET USING ARGENTX BROWSER EXTENSION =>
+
+	owner = 0x07D0E1fb52fD643e2C9B121dAB2FEDAc4Ca2Cd49DF929e9Fa38B679Dee95d048
+	erc20 = 0x049D36570D4e46f48e99674bd3fcc84644DdD6b96F7C741B1562B82f9e004dC7
+	ticket price = 10,0
+	zklend market = 0x04c0a5193d58f74fbace4b74dcf65481e734ed1714121bdc571da345540efa05
+
+Address of the deployed contract = 0x07f242ec7cd63a3dd931533b1159ae6e7a86e17414fc2ca29b84ee984969c248
+	
+Successful mint transaction = https://voyager.online/tx/0x53e67aab4ad551d473039d62c70c7d368d9acedaf85c27efbd4667558cfbc46
+
+Successful burn transaction = 0x0533c3d156d6b20e28705ea511646b41938cef433958f7b8d799741fa5fd7d68
+

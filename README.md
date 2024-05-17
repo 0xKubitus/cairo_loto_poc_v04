@@ -17,6 +17,10 @@ PART I - TICKETS HANDLER CONTRACT
 
 5. Add storage value for "tickets_limit_per_account" + getter and setter instead of hardcoded value of 10 (not urgent)
 
+6. Issue with using OZ ERC721 component v0.12.0: the use of ByteArrays for "name", "symbol" and "base_uri" =>
+   It's annoying because I don't know how to deploy constructors params in ByteArrays (might not even be possible yet with a simple starkli command?)
+   It's also annoying because neither blockexplorers nor wallet applications are currently able to read ByteArray values...
+
 ---
 
 PART II - LOTTERY ENGINE CONTRACT
