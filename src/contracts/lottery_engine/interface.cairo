@@ -1,18 +1,15 @@
-
 use starknet::ContractAddress;
-
-#[derive(Drop)]
-struct LotteryResult {
-    ticket_ID: u256,
-    ticket_owner: ContractAddress,
-    cashprize_amount: u256,
-}
 
 
 #[starknet::interface]
 trait ILotteryEngine<TState> {
-    fn get_next_lottery_draw_id(self: @TState) -> u256;
+    // Getters
+    fn get_last_lottery_draw_ID(self: @TState) -> u64;
+    fn get_lottery_engine_status(self: @TState) -> felt252;
+    //! to be deleted
+    fn get_last_random(self: @TState) -> felt252;
 
+    // Setters
     fn receive_random_words(
         ref self: TState,
         requestor_address: ContractAddress,
@@ -20,8 +17,6 @@ trait ILotteryEngine<TState> {
         random_words: Span<felt252>,
         calldata: Array<felt252>
     );
-    
-    fn run_lottery_draw(ref self: TState, draw_ID: u256);
-    
-    // fn get_lottery_result(self: @TState, draw_id: u256) -> LotteryResult;
+    fn run_lottery_draw(ref self: TState, draw_ID: u64);
+// fn get_lottery_result(self: @TState, draw_id: u256) -> LotteryResult;
 }

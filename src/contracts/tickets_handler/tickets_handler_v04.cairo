@@ -26,9 +26,7 @@ trait IzkLendMarket<TState> {
 mod TicketsHandlerContractV04 {
     use super::{IzkLendMarket, IzkLendMarketDispatcher, IzkLendMarketDispatcherTrait};
 
-    use cairo_loto_poc::components::cairo_loto_ticket::{
-        CairoLotoTicketComponent, ICairoLotoTicket
-    };
+    use cairo_loto_poc::components::cairo_loto_ticket::{CairoLotoTicketComponent, ICairoLotoTicket};
     use cairo_loto_poc::components::cairo_loto_ticket::CairoLotoTicketComponent::TicketInternalTrait;
     use openzeppelin::access::ownable::ownable::OwnableComponent::InternalTrait;
     use openzeppelin::access::ownable::OwnableComponent;
@@ -46,7 +44,6 @@ mod TicketsHandlerContractV04 {
     // const MAINNET_ZKLEND_MARKET_ADRS: felt252 =
     //     0x04c0a5193d58f74fbace4b74dcf65481e734ed1714121bdc571da345540efa05;
 
-    
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
     component!(path: ERC721Component, storage: erc721, event: ERC721Event);
     component!(path: CairoLotoTicketComponent, storage: ticket, event: TicketEvent);
@@ -117,24 +114,23 @@ mod TicketsHandlerContractV04 {
         ticket_value: u256,
         zkLend_market: ContractAddress,
     ) {
-    	
         /// Sets the token `name` and `symbol` and sets the `base_uri`.
         let name: ByteArray = "CAIRO LOTO Tickets (proof of concept)";
         let symbol: ByteArray = "LOTO";
-        let base_uri: ByteArray = "https://sapphire-glad-rodent-905.mypinata.cloud/ipfs/QmU3J2LsP83tatGy5FmCYxLADFG7DEmG3yS1QpRQM4bBcW";
+        let base_uri: ByteArray =
+            "https://sapphire-glad-rodent-905.mypinata.cloud/ipfs/QmU3J2LsP83tatGy5FmCYxLADFG7DEmG3yS1QpRQM4bBcW";
         self.erc721.initializer(name, symbol, base_uri);
-        
+
         /// Sets the ticket `underlying_asset` and its `value`.
         self.ticket.initializer(underlying_erc20, ticket_value);
-        
+
         /// Assigns `owner` as the contract owner.
         self.ownable.initializer(owner);
-        
+
         /// Mints the `token_ids` tokens to `recipient`
         // No need to pre-mint tickets for end-to-end tests
         // self._mint_assets(recipient, token_ids);
 
-        
         /// Keep in Storage the address of zkLend's Market contract
         self._initializer(zkLend_market);
     }

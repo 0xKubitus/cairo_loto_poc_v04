@@ -154,6 +154,4 @@ mod LotteryEngine {
             return ();
         }
     }
-
-
 }

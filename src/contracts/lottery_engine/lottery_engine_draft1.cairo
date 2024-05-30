@@ -21,7 +21,7 @@ trait IPragmaVRF<TContractState> {
 #[starknet::contract]
 mod LotteryEngine {
     use super::{IPragmaVRFDispatcher, IPragmaVRFDispatcherTrait};
-    use cairo_loto_poc::contracts::lottery_engine::interface::ILotteryEngine;
+    use cairo_loto_poc::contracts::lottery_engine::interface::{ILotteryEngine, LotteryResult};
     use cairo_loto_poc::contracts::tickets_handler::interface::{
         TicketsHandlerABIDispatcher, TicketsHandlerABIDispatcherTrait
     };
@@ -30,9 +30,7 @@ mod LotteryEngine {
     use openzeppelin::upgrades::UpgradeableComponent;
     use openzeppelin::upgrades::interface::IUpgradeable;
     use starknet::{ContractAddress, ClassHash,};
-    use starknet::info::{
-        get_block_number, get_block_timestamp, get_caller_address, get_contract_address,
-    };
+    use starknet::info::{get_block_number, get_caller_address, get_contract_address,};
 
 
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
@@ -45,22 +43,12 @@ mod LotteryEngine {
     impl UpgradeableInternalImpl = UpgradeableComponent::InternalImpl<ContractState>;
 
 
-    #[derive(Drop, Serde, starknet::Store)]
-    struct LotteryDrawDetails {
-        ticket_ID: u256,
-        ticket_owner: ContractAddress,
-        cashprize_amount: u256,
-    }
-
-
     #[storage]
     struct Storage {
         tickets_handler_contract: ContractAddress,
         pragma_vrf_contract: ContractAddress,
-        last_lottery_draw_ID: u64,
-        min_UTC_time_for_next_draw: u64,
-        lottery_draw_info: LegacyMap::<u256, LotteryDrawDetails>,
-        lottery_engine_status: felt252,
+        last_lottery_draw_ID: u256,
+        min_UTC_time_for_next_draw: u256,
         min_block_number_storage: u64, // required by Pragma VRF contract
         last_random_storage: felt252, // value updated by Pragma's VRF contract, not mandatory to save in storage but useful for development/testing
         #[substorage(v0)]
@@ -86,7 +74,7 @@ mod LotteryEngine {
         admin: ContractAddress,
         tickets_handler: ContractAddress,
         pragma_vrf: ContractAddress,
-        UTC_timestamp_of_first_draw_in_seconds: u64,
+        UTC_timestamp_of_first_draw_in_seconds: u256,
     ) {
         self.ownable.initializer(admin);
         self.pragma_vrf_contract.write(pragma_vrf);
@@ -97,7 +85,7 @@ mod LotteryEngine {
         //? ```javascript
         //? const time_of_first_draw_in_ms = Date.parse('01 Feb 2024 22:45:00 UTC'); // Change the date and time as you see fit, but always use UTC time.
         //?
-        //? const time_of_first_draw = time_of_first_draw_in_ms / 1000; // (Converting date from milliseconds to seconds because starknet::get_block_timestamp() returns a value in seconds)
+        //? const time_of_first_draw = time_of_first_draw_in_ms / 1000; // (Converting date from milliseconds to seconds to match the needs of our Lottery contract in cairo)
         //? console.log('time_of_first_draw_in_seconds = ', time_of_first_draw);
         //? ```
         //? You should see this result in your console:
@@ -109,80 +97,41 @@ mod LotteryEngine {
 
         //! Below is the generic way, to use for production
         self.min_UTC_time_for_next_draw.write(UTC_timestamp_of_first_draw_in_seconds);
-        //================================================================
+    //================================================================
 
-        self.lottery_engine_status.write('WAITING FOR NEXT DRAW TIME');
     }
 
     #[abi(embed_v0)]
     impl LotteryEngineImpl of ILotteryEngine<ContractState> {
-        //
-        // Getters
-        //
-        fn get_last_lottery_draw_ID(self: @ContractState) -> u64 {
+        fn get_last_lottery_draw_id(self: @ContractState) -> u256 {
             self.last_lottery_draw_ID.read()
         }
 
-        fn get_lottery_engine_status(self: @ContractState) -> felt252 {
-            self.lottery_engine_status.read()
-        }
-
-        //! To be deleted/replaced with the results of a specific lottery draw_ID
-        fn get_last_random(self: @ContractState) -> felt252 {
-            let last_random = self.last_random_storage.read();
-            return last_random;
-        }
-
-        //
-        // Setters
-        //
-        fn run_lottery_draw(ref self: ContractState, draw_ID: u64,) {
+        fn run_lottery_draw(ref self: ContractState, draw_ID: u256,) {
             //! Should we ONLY allow the owner of this contract to interact with this function?
             // (maybe we should not, for example in case we can't trigger the lottery draws
             // with a cron job and want to allow any user to run lottery draws when a timer arrives to zero on the frontend app?)
             //! let's keep it during development phase, though, to avoid anyone spending the testnet ETH I'll be sending to this contract!
             self.ownable.assert_only_owner();
+        // // use `fn _request_my_randomness()`
+        // // below are the required attributes:
+        // // seed: random seed that feeds into the verifiable random algorithm, must be different every time.
+        // // callback_address: address to call receive_random_words on with the randomness
+        // // callback_fee_limit: overall fee limit on the callback function
+        // // publish_delay: minimum number of blocks to wait from the request to fulfillment
+        // // num_words: number of random words to receive in one call. Each word is a felt252.
+        // // calldata: calldata we want to pass down to the callback function
 
-            // Verify that it is indeed time to initialize a new lottery draw
-            let current_time = get_block_timestamp();
-            assert!(
-                current_time >= self.min_UTC_time_for_next_draw.read(),
-                "It is not yet time to conduct this Lottery draw"
-            );
+        // // let seed: u64 = ;
+        // // let callback_address = get_contract_address();
+        // // let callback_fee_limit 
 
-            // Verify that this Lottery draw hasn't been already initialized
-            assert!(
-                self.lottery_engine_status.read() == 'WAITING FOR NEXT DRAW TIME',
-                "this Lottery draw has already been initialized"
-            );
+        // let current_time
+        // assert(, '');
 
-            // Change lottery_engine_status value to 'IN PROGRESS'...
-            // to prevent the same lottery_draw_ID to be conducted multiple times
-            self.lottery_engine_status.write('LOTTERY DRAW IS IN PROGRESS');
-
-            // Request 'random_words' from PragmaVRF contract using "fn _request_my_randomness()" private method
-            let callback_address: ContractAddress = get_contract_address();
-            let callback_fee_limit: u128 = 5000000000000000; //! will need to be fine-tuned
-            let publish_delay: u64 = 1; //! let's try '1' and '0', but I guess that '0' won't work.
-            let num_words: u64 =
-                1; // I might request for more than a single word from the VRF so that there would be more probability to have a value matching a ticket_ID?
-            let calldata: Array<felt252> =
-                array![]; // I HAVE NO CLUE IF THIS CALLDATA PARAMETER ACTUALLY PLAYS ANY ROLE IN THE RANDOMNESS GENERATION? IF ONLY IT COULD BE USED TO SET UP THE RANGE OF THE RANDOMNESS...
-            //! SEED NEEDS TO CHANGE EVERY DRAW, BUT DOES IT ALSO NEEDS
-            //! TO BE VERY DIFFICULT TO GUESS BY POTENTIAL HACKERS?
-            //! IF SO, HOW SHOULD I PROCEED? 
-            //! (=> passing the value of seed from frontend app, which would not be open-sourced?)
-            // let seed: u64 = ((current_time / get_block_number()) * draw_ID); // no need to make things complex here if I plan to open-source the code of this contract...
-            let seed: u64 = current_time;
-
-            self
-                ._request_my_randomness(
-                    seed, callback_address, callback_fee_limit, publish_delay, num_words, calldata
-                );
         }
 
-        /// CANNOT BE RENAMED, NOR HAVE DIFFERENT ATTRIBUTES
-        /// (PRAGMA SENDS THE RANDOMNESS TO THE PRESENT CONTRACT USING BELOW FUNCTION)
+        /// CANNOT BE RENAMED, NOR HAVE DIFFERENT ATTRIBUTES (PRAGMA SENDS THE RANDOMNESS TO THE PRESENT CONTRACT USING BELOW FUNCTION)
         fn receive_random_words(
             ref self: ContractState,
             requestor_address: ContractAddress,
@@ -217,10 +166,8 @@ mod LotteryEngine {
                 .write(
                     random_word
                 ); // `last_random_storage` is default storage value from Pragma's example contract
-
-            // Maybe return: draw_ID, block_timestamp, winning_ticket_ID, winning_ticket_owner, cashprize_amount... instead?
-
-            //TODO: Find the owner of the ticket which ID matches the last random storage + compute cashprize + allow winner to claim cashprize
+            //! Maybe return: draw_ID, block_timestamp, winning_ticket_ID, winning_ticket_owner, cashprize_amount... instead?
+            //TODO:
             // _finalize_lottery_draw();
 
             return ();
@@ -252,12 +199,13 @@ mod LotteryEngine {
             num_words: u64,
             calldata: Array<felt252>
         ) {
-            let randomness_contract_address = self.pragma_vrf_contract.read();
-            let randomness_dispatcher = IPragmaVRFDispatcher {
-                contract_address: randomness_contract_address
+            let vrf_contract_address = self.pragma_vrf_contract.read();
+            let __member_module_pragma_vrf_contract_dispatcher = IPragmaVRFDispatcher {
+                contract_address: vrf_contract_address
             };
             let caller = get_caller_address();
-            let compute_fees = randomness_dispatcher.compute_premium_fee(caller);
+            let compute_fees = __member_module_pragma_vrf_contract_dispatcher
+                .compute_premium_fee(caller);
 
             // Approve the randomness contract to transfer the callback fee
             // NOTE FOR SELF: This contract always needs to own some ETH to cover Pragma VRF fees required to use VRF
@@ -268,12 +216,12 @@ mod LotteryEngine {
             };
             eth_dispatcher
                 .approve(
-                    randomness_contract_address,
+                    vrf_contract_address,
                     (callback_fee_limit + compute_fees + callback_fee_limit / 5).into()
                 );
 
             // Request the randomness
-            let request_id = randomness_dispatcher
+            let request_id = __member_module_pragma_vrf_contract_dispatcher
                 .request_random(
                     seed, callback_address, callback_fee_limit, publish_delay, num_words, calldata
                 );

@@ -26,9 +26,7 @@ trait IzkLendMarket<TState> {
 mod TicketsHandlerContract {
     use super::{IzkLendMarket, IzkLendMarketDispatcher, IzkLendMarketDispatcherTrait};
 
-    use cairo_loto_poc::components::cairo_loto_ticket::{
-        CairoLotoTicketComponent, ICairoLotoTicket
-    };
+    use cairo_loto_poc::components::cairo_loto_ticket::{CairoLotoTicketComponent, ICairoLotoTicket};
     use cairo_loto_poc::components::cairo_loto_ticket::CairoLotoTicketComponent::TicketInternalTrait;
     use openzeppelin::access::ownable::ownable::OwnableComponent::InternalTrait;
     use openzeppelin::access::ownable::OwnableComponent;
@@ -44,7 +42,6 @@ mod TicketsHandlerContract {
 
 
     // const MAINNET_ZKLEND_MARKET_ADRS: felt252 = 0x04c0a5193d58f74fbace4b74dcf65481e734ed1714121bdc571da345540efa05;
-
 
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
     component!(path: ERC721Component, storage: erc721, event: ERC721Event);

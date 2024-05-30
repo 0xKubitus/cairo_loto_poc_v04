@@ -4,5 +4,3 @@ mod contracts;
 #[cfg(test)]
 mod testing_utils;
 
-
-
