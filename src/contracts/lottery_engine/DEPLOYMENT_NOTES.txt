@@ -1,0 +1,57 @@
+Command used to declare each contract needed for end-to-end tests of Lottery Engine:
+(compiler version used by default by starkli = 2.6.2)
+
+```
+starkli declare target/dev/cairo_loto_poc_LotteryEngine.contract_class.json --max-fee-raw 784630992287823
+```
+
+=> LotteryEngine Contract ClassHash = 0x077e47337ccb9221d1104b09fd53ba64ca0443272b7cef7261d4731922772d98
+
+
+################################################################################
+
+
+Commands used to deploy the Lottery contract on Sepolia:
+(compiler version used by default by starkli = 2.6.2)
+
+
+LotteryEngine contract (most basic version)
+=> `starkli deploy <class_hass> <owner/admin> <tickets_handler> <pragma_vrf> <UTC_timestamp_of_first_draw_in_seconds> --watch`
+
+```
+starkli deploy 0x077e47337ccb9221d1104b09fd53ba64ca0443272b7cef7261d4731922772d98 0x067de9301b1a536800e50AF781Ea93b3918D6b431b781246864f24CAB5e4c34E 0x06cac83d50e115f7b8ccf3f4fa9dc3e0602b2ac0ce3098a0e8464745972751fa 0x60c69136b39319547a4df303b6b3a26fab8b2d78de90b6bd215ce82e9cb515c 1706827500
+```
+
+Setting the minimum date for the first lottery draw=> use `./deployment/UTC_timestamp_calculator.js`.
+
+Transaction ID: 0x0321047708ca5db30dca4ee8bb2aff731a58dcd021c76d16e55445692923aea7
+Contract Address: 0x077454b7aba1584639bd695a4340107768e23f183777f8af918806a9f1a4cc9b
+
+
+################################################################################
+
+
+TESTING =>
+
+*first, send some ETH to the Lottery Engine so it can pay PragmaVRF fees
+(required to test Lottery Engine's 'run_lottery_draw(draw_ID)' function)
+
+`starkli invoke eth transfer 0x077454b7aba1584639bd695a4340107768e23f183777f8af918806a9f1a4cc9b u256:9000000000000000 --max-fee-raw 9586630103220682`
+=> Tx Hash = 0x070e8b28fd6e1b8c5005bca106d9d744fac92edef4027c64284c80e898a15df2
+
+- - - - - - - - - -
+
+ACTUAL TEST (sepolia) =>
+
+Transaction_ID: 0x75d6af9f86da88a2c348f66928f42c10badff29008a06837c488e3fa817bccf
+
+
+
+--------------------------------------------------------------------------------------------------------------------------------
+
+
+nouvelle version (essai avec "0" en publish delay, dans "run_lottery_draw()" )
+
+contract classHash = 0x064d6857ea9ff86495de07efc82d90590d221e707088949c7cf69cf5f5062a48
+
+contract deployed = 0x0368b517fff5ef9c97573b23c24f14cdcb88352dd911b0d88a215ff595ba36bc

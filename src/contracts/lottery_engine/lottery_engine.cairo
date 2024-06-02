@@ -46,9 +46,10 @@ mod LotteryEngine {
 
 
     #[derive(Drop, Serde, starknet::Store)]
-    struct LotteryDrawDetails {
-        ticket_ID: u256,
-        ticket_owner: ContractAddress,
+    struct LotteryResult {
+        //lottery_draw_details: LotteryDrawDetails; // <- this could include date of the draw, the tx_hash, the proof-of-randomness, etc.
+        drawed_ticket_ID: u256,
+        lottery_winner: ContractAddress,
         cashprize_amount: u256,
     }
 
@@ -57,9 +58,9 @@ mod LotteryEngine {
     struct Storage {
         tickets_handler_contract: ContractAddress,
         pragma_vrf_contract: ContractAddress,
-        last_lottery_draw_ID: u64,
-        min_UTC_time_for_next_draw: u64,
-        lottery_draw_info: LegacyMap::<u256, LotteryDrawDetails>,
+        last_lottery_draw_ID: u64, // <= should be turned back into a u256? I guess finally there's no need to make it match the type of `min_UTC_time_for_next_draw`
+        min_UTC_time_for_next_draw: u64, // using u64 here to match the type of `starknet::get_block_timestamp()`
+        lottery_draw_result: LegacyMap::<u64, LotteryResult>,
         lottery_engine_status: felt252,
         min_block_number_storage: u64, // required by Pragma VRF contract
         last_random_storage: felt252, // value updated by Pragma's VRF contract, not mandatory to save in storage but useful for development/testing
@@ -86,29 +87,19 @@ mod LotteryEngine {
         admin: ContractAddress,
         tickets_handler: ContractAddress,
         pragma_vrf: ContractAddress,
-        UTC_timestamp_of_first_draw_in_seconds: u64,
+        // UTC_timestamp_of_first_draw_in_seconds: u64, // not mandatory during dev stage, but will be needed for production
     ) {
         self.ownable.initializer(admin);
         self.pragma_vrf_contract.write(pragma_vrf);
 
         //================================================================
-        //! Setting the minimum date for the first lottery draw => To be updated for production/mainnet deployment
-        //? => Use Javascript to print in your console the minimum time for the next lottery draw (run the following code in the javascript environment of your liking, for example -> codepen.io)
-        //? ```javascript
-        //? const time_of_first_draw_in_ms = Date.parse('01 Feb 2024 22:45:00 UTC'); // Change the date and time as you see fit, but always use UTC time.
-        //?
-        //? const time_of_first_draw = time_of_first_draw_in_ms / 1000; // (Converting date from milliseconds to seconds because starknet::get_block_timestamp() returns a value in seconds)
-        //? console.log('time_of_first_draw_in_seconds = ', time_of_first_draw);
-        //? ```
-        //? You should see this result in your console:
-        //? "time_of_first_draw_in_seconds = 1706827500"
-
         //! here is the hard-coded way, which might be more practical for development & testing?
-        // let UTC_timestamp_of_first_draw_in_seconds: u256 = 1706827500;
-        // self.time_of_first_draw_in_seconds.write(UTC_timestamp_of_first_draw_in_seconds);
+        // see `UTC_timestamp_calculator.js` and `DEPLOYMENT_NOTES.txt` to compute desired timestamp in seconds.
+        let UTC_timestamp_of_first_draw_in_seconds: u64 = 1717336500;
+        self.min_UTC_time_for_next_draw.write(UTC_timestamp_of_first_draw_in_seconds);
 
         //! Below is the generic way, to use for production
-        self.min_UTC_time_for_next_draw.write(UTC_timestamp_of_first_draw_in_seconds);
+        // self.min_UTC_time_for_next_draw.write(UTC_timestamp_of_first_draw_in_seconds);
         //================================================================
 
         self.lottery_engine_status.write('WAITING FOR NEXT DRAW TIME');
@@ -127,6 +118,18 @@ mod LotteryEngine {
             self.lottery_engine_status.read()
         }
 
+        fn get_lottery_result(self: @ContractState, draw_ID: u64) -> (u256, ContractAddress, u256) {
+            let winning_ticket_ID = self.lottery_draw_result.read(draw_ID).drawed_ticket_ID;
+            let winner_address = self.lottery_draw_result.read(draw_ID).lottery_winner;
+            let cashprize = self.lottery_draw_result.read(draw_ID).cashprize_amount;
+
+            return (winning_ticket_ID, winner_address, cashprize);
+        }
+
+        fn get_next_lottery_min_draw_time(self: @ContractState) -> u64 {
+            self.min_UTC_time_for_next_draw.read()
+        }
+
         //! To be deleted/replaced with the results of a specific lottery draw_ID
         fn get_last_random(self: @ContractState) -> felt252 {
             let last_random = self.last_random_storage.read();
@@ -137,6 +140,9 @@ mod LotteryEngine {
         // Setters
         //
         fn run_lottery_draw(ref self: ContractState, draw_ID: u64,) {
+            // Verify the given draw_ID
+            assert!(draw_ID == self.last_lottery_draw_ID.read()+1, "Wrong 'draw_ID' passed as function parameter");
+
             //! Should we ONLY allow the owner of this contract to interact with this function?
             // (maybe we should not, for example in case we can't trigger the lottery draws
             // with a cron job and want to allow any user to run lottery draws when a timer arrives to zero on the frontend app?)
@@ -162,8 +168,8 @@ mod LotteryEngine {
 
             // Request 'random_words' from PragmaVRF contract using "fn _request_my_randomness()" private method
             let callback_address: ContractAddress = get_contract_address();
-            let callback_fee_limit: u128 = 5000000000000000; //! will need to be fine-tuned
-            let publish_delay: u64 = 1; //! let's try '1' and '0', but I guess that '0' won't work.
+            let callback_fee_limit: u128 = 5000000000000000; //! will need to be fine-tuned using `starkli invoke <ContractAddress> run_lottery_draw --estimate-only`
+            let publish_delay: u64 = 0; //? I tried using '1' & '0' => both are working but I assume the quicker the better?
             let num_words: u64 =
                 1; // I might request for more than a single word from the VRF so that there would be more probability to have a value matching a ticket_ID?
             let calldata: Array<felt252> =
@@ -217,14 +223,44 @@ mod LotteryEngine {
                 .write(
                     random_word
                 ); // `last_random_storage` is default storage value from Pragma's example contract
+            //? Maybe return: draw_ID, block_timestamp, winning_ticket_ID, winning_ticket_owner, cashprize_amount... instead?
 
-            // Maybe return: draw_ID, block_timestamp, winning_ticket_ID, winning_ticket_owner, cashprize_amount... instead?
-
+            
             //TODO: Find the owner of the ticket which ID matches the last random storage + compute cashprize + allow winner to claim cashprize
             // _finalize_lottery_draw();
+            
+            // Update `last_lottery_draw_ID` Storage value
+            self._update_draw_ID();
 
+            // Set the time for next lottery draw
+            let ten_minutes: u64 = 10 * 60;
+            self.min_UTC_time_for_next_draw.write(self.min_UTC_time_for_next_draw.read() + ten_minutes);
+
+            // Finally, Reset `lottery_engine_status` value to 'WAITING'
+            // to prevent the same lottery_draw_ID to be conducted multiple times
+            self.lottery_engine_status.write('WAITING FOR NEXT DRAW TIME');
+
+            //! Not sure that below "return()" is necessary... (it is from Pragma's snippet)
             return ();
         }
+
+        //! TO BE DELETED - ONLY USEFUL DURING DEVELOPMENT IN ORDER TO GET BACK THE 
+        //! TESTNET ETHs I SEND TO EACH DEPLOYED CONTRACT FOR TESTING
+        fn withdraw_funds(ref self: ContractState, receiver: ContractAddress) {
+            self.ownable.assert_only_owner();
+
+            let eth_dispatcher = IERC20Dispatcher {
+                contract_address: 0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7 // ETH Contract Address
+                    .try_into()
+                    .unwrap()
+            };
+
+            let balance = eth_dispatcher.balance_of(get_contract_address());
+
+            eth_dispatcher.transfer(receiver, balance);
+        }
+    
+
     }
 
     #[abi(embed_v0)]
